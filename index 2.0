@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Museo Virtual de Emprendimiento · Sala del Grupo 1 · Universidad Ean</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { 950: '#050f1f', 900: '#0a1c36', 800: '#0f2a4d', 700: '#17396a', 600: '#21508f' },
+          gold: { 300: '#fbd96a', 400: '#f7c93c', 500: '#f2b705', 600: '#c99600' }
+        },
+        fontFamily: { serif: ['Playfair Display', 'serif'], sans: ['Inter', 'sans-serif'] }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; background: #050f1f; color: #e6edf7; }
+  section { scroll-margin-top: 80px; }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* Hero background */
+  .hero-bg {
+    background:
+      radial-gradient(circle at 15% 20%, rgba(242,183,5,.18), transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(33,80,143,.5), transparent 45%),
+      linear-gradient(160deg, #050f1f 0%, #0a1c36 60%, #0f2a4d 100%);
+  }
+  .grid-pattern {
+    background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  /* Timeline */
+  .tl-line { background: linear-gradient(to bottom, transparent, #f2b705 8%, #f2b705 92%, transparent); }
+  .tl-dot { transition: all .3s ease; }
+  .tl-card:hover .tl-dot { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(242,183,5,.2); }
+
+  /* Flip cards */
+  .flip { perspective: 1200px; }
+  /* Ambas caras comparten la misma celda de la cuadrícula: la altura se adapta al contenido (ideal para móvil) */
+  .flip-inner { display: grid; height: 100%; min-height: 420px; transition: transform .8s cubic-bezier(.4,.2,.2,1); transform-style: preserve-3d; }
+  .flip.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .flip-back { transform: rotateY(180deg); }
+
+  /* ---------- Ajustes responsivos ---------- */
+  html, body { overflow-x: hidden; }
+  h1, h2, h3, h4 { overflow-wrap: anywhere; }
+  .node { padding: 12px; }                       /* área táctil más grande en el mapa */
+  .modal-box { max-height: 88vh; max-height: 88dvh; }
+
+  /* Tabla comparativa → tarjetas apiladas en pantallas pequeñas */
+  @media (max-width: 640px) {
+    section.py-24 { padding-top: 4rem; padding-bottom: 4rem; }
+    #inicio { min-height: 100svh; }
+    table.resp thead { display: none; }
+    table.resp, table.resp tbody, table.resp tr, table.resp td { display: block; width: 100%; }
+    table.resp tr { padding: .9rem 1.25rem; }
+    table.resp td { padding: .35rem 0 !important; }
+    table.resp td::before { content: attr(data-label); display: block; font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8aa0bf; }
+    table.resp td:first-child { font-weight: 700; color: #fff; }
+    table.resp td:first-child::before { display: none; }
+    .flip-inner { min-height: 0; }
+  }
+
+  /* Paths */
+  .path-card { transition: all .5s cubic-bezier(.4,.2,.2,1); }
+  .path-card .path-extra { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .6s ease, opacity .5s ease; }
+  .path-card.active .path-extra { max-height: 700px; opacity: 1; }
+
+  /* Quiz option */
+  .quiz-opt { transition: all .25s ease; }
+  .quiz-opt:hover { transform: translateX(6px); border-color: #f2b705; background: rgba(242,183,5,.08); }
+  .quiz-opt.selected { border-color: #f2b705; background: rgba(242,183,5,.18); }
+
+  /* Map nodes */
+  @keyframes pulseRing { 0% { transform: scale(.8); opacity: .8; } 100% { transform: scale(2.2); opacity: 0; } }
+  .pulse::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: #f2b705; animation: pulseRing 2s infinite; z-index: -1; }
+
+  /* Modal */
+  .modal-bg { opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+  .modal-bg.open { opacity: 1; pointer-events: auto; }
+  .modal-box { transform: translateY(30px) scale(.96); transition: transform .35s ease; }
+  .modal-bg.open .modal-box { transform: none; }
+
+  @keyframes floaty { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-10px);} }
+  .floaty { animation: floaty 4s ease-in-out infinite; }
+
+  @keyframes pop { 0% { transform: scale(.6); opacity: 0;} 70% { transform: scale(1.06);} 100% { transform: scale(1); opacity: 1;} }
+  .pop { animation: pop .6s ease forwards; }
+
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #050f1f; }
+  ::-webkit-scrollbar-thumb { background: #21508f; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #f2b705; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- ================= NAVBAR ================= -->
+<header class="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-navy-950/80 border-b border-white/10">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="#inicio" class="flex items-center gap-3 group">
+      <span class="w-9 h-9 rounded-lg bg-gold-500 text-navy-900 flex items-center justify-center font-extrabold group-hover:rotate-6 transition">E</span>
+      <span class="leading-tight">
+        <span class="block text-sm font-bold text-white">Museo del Emprendimiento</span>
+        <span class="block text-[11px] text-gold-400 tracking-wider uppercase">Sala del Grupo 1</span>
+      </span>
+    </a>
+    <ul class="hidden lg:flex items-center gap-1 text-sm font-medium">
+      <li><a class="nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition" href="#modulo1">1 · Teorías</a></li>
+      <li><a class="nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition" href="#modulo2">2 · Dos caminos</a></li>
+      <li><a class="nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition" href="#modulo3">3 · Perfiles</a></li>
+      <li><a class="nav-link px-3 py-2 rounded-lg hover:bg-white/10 transition" href="#modulo4">4 · Colombia</a></li>
+    </ul>
+    <button id="menuBtn" class="lg:hidden w-10 h-10 rounded-lg hover:bg-white/10 flex items-center justify-center" aria-label="Abrir menú" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </nav>
+  <div id="mobileMenu" class="hidden lg:hidden border-t border-white/10 bg-navy-950/95">
+    <ul class="px-4 py-3 space-y-1 text-sm font-medium">
+      <li><a class="block px-3 py-2 rounded-lg hover:bg-white/10" href="#modulo1">1 · Teorías del emprendimiento</a></li>
+      <li><a class="block px-3 py-2 rounded-lg hover:bg-white/10" href="#modulo2">2 · Los dos caminos</a></li>
+      <li><a class="block px-3 py-2 rounded-lg hover:bg-white/10" href="#modulo3">3 · Perfiles emprendedores</a></li>
+      <li><a class="block px-3 py-2 rounded-lg hover:bg-white/10" href="#modulo4">4 · Radiografía Colombia</a></li>
+    </ul>
+  </div>
+  <div class="h-[3px] bg-white/5"><div id="progress" class="h-full bg-gradient-to-r from-gold-500 to-gold-300 w-0"></div></div>
+</header>
+
+<main>
+<!-- ================= HERO ================= -->
+<section id="inicio" class="hero-bg relative min-h-screen flex items-center overflow-hidden pt-20">
+  <div class="absolute inset-0 grid-pattern"></div>
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center py-16">
+    <div class="reveal">
+      <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gold-500/40 bg-gold-500/10 text-gold-300 text-xs font-semibold tracking-widest uppercase">
+        <i class="fa-solid fa-building-columns"></i> Universidad Ean · Exposición virtual
+      </span>
+      <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-extrabold mt-6 leading-tight text-white">
+        Museo Virtual de <span class="text-gold-400">Emprendimiento</span>
+      </h1>
+      <p class="mt-3 font-serif text-xl sm:text-2xl text-gold-300/90">Sala del Grupo 1</p>
+      <p class="mt-6 text-lg text-slate-300 max-w-xl leading-relaxed">
+        Recorre una línea de vida del pensamiento emprendedor: desde las teorías clásicas hasta la realidad del emprendedor colombiano. Cuatro módulos, una sola experiencia.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="#modulo1" class="px-7 py-3 rounded-xl bg-gold-500 text-navy-900 font-bold hover:bg-gold-400 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gold-500/20 transition">
+          Iniciar recorrido <i class="fa-solid fa-arrow-down ml-2"></i>
+        </a>
+        <a href="#modulo3" class="px-7 py-3 rounded-xl border border-white/20 hover:border-gold-400 hover:text-gold-300 transition font-semibold">
+          Ir al quiz <i class="fa-solid fa-circle-question ml-2"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="reveal hidden lg:block">
+      <div class="relative w-full max-w-md mx-auto">
+        <div class="absolute -inset-6 rounded-[2rem] bg-gold-500/10 blur-2xl"></div>
+        <div class="relative rounded-3xl border border-white/10 bg-navy-800/60 backdrop-blur p-8 floaty">
+          <p class="text-xs uppercase tracking-widest text-gold-400 font-semibold mb-5">Mapa del recorrido</p>
+          <ol class="space-y-4">
+            <li class="flex items-center gap-4"><span class="w-10 h-10 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold">1</span><span><b>Teorías</b><br><span class="text-sm text-slate-400">Línea del tiempo interactiva</span></span></li>
+            <li class="flex items-center gap-4"><span class="w-10 h-10 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold">2</span><span><b>Dos caminos</b><br><span class="text-sm text-slate-400">Empresa vs. iniciativa social</span></span></li>
+            <li class="flex items-center gap-4"><span class="w-10 h-10 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold">3</span><span><b>Perfiles Ean</b><br><span class="text-sm text-slate-400">Tarjetas y quiz</span></span></li>
+            <li class="flex items-center gap-4"><span class="w-10 h-10 rounded-full bg-gold-500 text-navy-900 flex items-center justify-center font-bold">4</span><span><b>Colombia</b><br><span class="text-sm text-slate-400">Radiografía regional</span></span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="#modulo1" class="absolute bottom-6 left-1/2 -translate-x-1/2 text-gold-400 animate-bounce" aria-label="Bajar"><i class="fa-solid fa-chevron-down text-xl"></i></a>
+</section>
+
+<!-- ================= MÓDULO 1 ================= -->
+<section id="modulo1" class="relative py-24 bg-navy-900">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+    <div class="text-center reveal">
+      <span class="text-gold-400 text-xs font-bold tracking-[.3em] uppercase">Módulo 1</span>
+      <h2 class="font-serif text-3xl sm:text-4xl font-bold mt-3 text-white">Teorías Clásicas y Actuales del Emprendimiento</h2>
+      <p class="mt-4 text-slate-400 max-w-2xl mx-auto">Haz clic en cada nodo de la línea del tiempo para abrir la ficha de la teoría.</p>
+    </div>
+
+    <div class="relative mt-16" id="timeline">
+      <div class="tl-line absolute left-6 md:left-1/2 top-0 bottom-0 w-[3px] md:-translate-x-1/2"></div>
+      <!-- nodes injected by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ================= MÓDULO 2 ================= -->
+<section id="modulo2" class="relative py-24 bg-navy-950 overflow-hidden">
+  <div class="absolute inset-0 grid-pattern opacity-60"></div>
+  <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center reveal">
+      <span class="text-gold-400 text-xs font-bold tracking-[.3em] uppercase">Módulo 2</span>
+      <h2 class="font-serif text-3xl sm:text-4xl font-bold mt-3 text-white">Los Dos Caminos del Emprendimiento</h2>
+      <p class="mt-4 text-slate-400 max-w-2xl mx-auto">Un mismo espíritu emprendedor, dos rutas distintas. Pasa el cursor o toca una columna para ver sus rasgos clave.</p>
+    </div>
+
+    <!-- Prisma -->
+    <div class="reveal mt-12 flex flex-col items-center">
+      <div class="w-16 h-16 rounded-2xl rotate-45 bg-gradient-to-br from-gold-300 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/30">
+        <i class="fa-solid fa-lightbulb -rotate-45 text-navy-900 text-2xl"></i>
+      </div>
+      <p class="mt-5 text-sm uppercase tracking-widest text-gold-300 font-semibold">Idea emprendedora</p>
+      <svg class="w-full max-w-xl h-14 mt-1" viewBox="0 0 400 56" fill="none" aria-hidden="true">
+        <path d="M200 0 V14 C200 28 90 22 90 56" stroke="#f2b705" stroke-width="2.5" stroke-dasharray="5 5"/>
+        <path d="M200 0 V14 C200 28 310 22 310 56" stroke="#7fb0ec" stroke-width="2.5" stroke-dasharray="5 5"/>
+      </svg>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mt-2" id="pathsWrap">
+      <!-- Camino A -->
+      <article class="path-card reveal rounded-3xl border border-gold-500/30 bg-gradient-to-br from-navy-800 to-navy-900 p-7 cursor-pointer hover:-translate-y-1 hover:border-gold-400 hover:shadow-2xl hover:shadow-gold-500/10" data-path="A" tabindex="0" role="button" aria-expanded="false">
+        <div class="flex items-start gap-4">
+          <span class="w-14 h-14 shrink-0 rounded-2xl bg-gold-500 text-navy-900 flex items-center justify-center text-2xl"><i class="fa-solid fa-rocket"></i></span>
+          <div>
+            <p class="text-xs font-bold tracking-widest text-gold-400 uppercase">Camino A</p>
+            <h3 class="font-serif text-2xl font-bold text-white leading-snug">Creación de Empresas</h3>
+            <p class="text-sm text-slate-400">Emprendimiento tradicional y startups</p>
+          </div>
+        </div>
+        <p class="mt-5 text-slate-300 leading-relaxed">Se centra en <b class="text-gold-300">constituir una nueva entidad</b> con identidad jurídica propia, validar un modelo de negocio y hacerlo crecer.</p>
+        <div class="flex flex-wrap gap-2 mt-5">
+          <span class="px-3 py-1 rounded-full bg-gold-500/15 text-gold-300 text-xs font-semibold">Nueva empresa</span>
+          <span class="px-3 py-1 rounded-full bg-gold-500/15 text-gold-300 text-xs font-semibold">Escalabilidad</span>
+          <span class="px-3 py-1 rounded-full bg-gold-500/15 text-gold-300 text-xs font-semibold">Empleo</span>
+        </div>
+        <div class="path-extra">
+          <ul class="mt-6 space-y-3 text-sm text-slate-200">
+            <li class="flex gap-3"><i class="fa-solid fa-file-signature text-gold-400 mt-1"></i><span><b>Constitución:</b> registro, formalización y estructura legal de una nueva organización.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-flask text-gold-400 mt-1"></i><span><b>Validación:</b> prueba del modelo de negocio con clientes reales antes de invertir a gran escala.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-chart-line text-gold-400 mt-1"></i><span><b>Escalabilidad:</b> crecimiento de ingresos y mercado sin que los costos crezcan al mismo ritmo.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-users text-gold-400 mt-1"></i><span><b>Generación de empleo:</b> la empresa crea puestos de trabajo y dinamiza la economía.</span></li>
+          </ul>
+          <p class="mt-5 text-xs text-gold-300/80 italic">Pregunta guía: ¿qué empresa nueva puede nacer de esta oportunidad?</p>
+        </div>
+        <p class="mt-5 text-xs text-slate-500 flex items-center gap-2"><i class="fa-solid fa-hand-pointer"></i> <span class="toggle-hint">Toca para explorar</span></p>
+      </article>
+
+      <!-- Camino B -->
+      <article class="path-card reveal rounded-3xl border border-sky-400/30 bg-gradient-to-br from-navy-800 to-navy-900 p-7 cursor-pointer hover:-translate-y-1 hover:border-sky-300 hover:shadow-2xl hover:shadow-sky-400/10" data-path="B" tabindex="0" role="button" aria-expanded="false">
+        <div class="flex items-start gap-4">
+          <span class="w-14 h-14 shrink-0 rounded-2xl bg-sky-400 text-navy-900 flex items-center justify-center text-2xl"><i class="fa-solid fa-hands-holding-circle"></i></span>
+          <div>
+            <p class="text-xs font-bold tracking-widest text-sky-300 uppercase">Camino B</p>
+            <h3 class="font-serif text-2xl font-bold text-white leading-snug">Iniciativas y Proyectos Sociales / Institucionales</h3>
+            <p class="text-sm text-slate-400">Intraemprendimiento e impacto</p>
+          </div>
+        </div>
+        <p class="mt-5 text-slate-300 leading-relaxed">Transforma desde dentro de organizaciones o comunidades: <b class="text-sky-300">el cambio importa más que crear una persona jurídica</b>.</p>
+        <div class="flex flex-wrap gap-2 mt-5">
+          <span class="px-3 py-1 rounded-full bg-sky-400/15 text-sky-200 text-xs font-semibold">Intraemprendimiento</span>
+          <span class="px-3 py-1 rounded-full bg-sky-400/15 text-sky-200 text-xs font-semibold">Impacto</span>
+          <span class="px-3 py-1 rounded-full bg-sky-400/15 text-sky-200 text-xs font-semibold">Valor compartido</span>
+        </div>
+        <div class="path-extra">
+          <ul class="mt-6 space-y-3 text-sm text-slate-200">
+            <li class="flex gap-3"><i class="fa-solid fa-building-user text-sky-300 mt-1"></i><span><b>Intraemprendimiento:</b> equipos que innovan dentro de una empresa o institución ya existente.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-leaf text-sky-300 mt-1"></i><span><b>Impacto socioambiental:</b> proyectos que atienden problemas de comunidades y del entorno.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-arrows-spin text-sky-300 mt-1"></i><span><b>Transformación interna:</b> nuevos procesos, culturas y modelos de servicio.</span></li>
+            <li class="flex gap-3"><i class="fa-solid fa-handshake text-sky-300 mt-1"></i><span><b>Valor compartido:</b> beneficios económicos y sociales que se refuerzan mutuamente.</span></li>
+          </ul>
+          <p class="mt-5 text-xs text-sky-200/80 italic">Pregunta guía: ¿qué cambio puede liderarse desde donde ya estoy?</p>
+        </div>
+        <p class="mt-5 text-xs text-slate-500 flex items-center gap-2"><i class="fa-solid fa-hand-pointer"></i> <span class="toggle-hint">Toca para explorar</span></p>
+      </article>
+    </div>
+
+    <!-- Comparativa -->
+    <div class="reveal mt-10 rounded-3xl border border-white/10 bg-navy-800/50 overflow-hidden">
+      <div class="px-6 py-4 border-b border-white/10 font-serif font-bold text-white">Diferencias principales</div>
+      <div class="overflow-x-auto">
+        <table class="resp w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-400">
+              <th class="px-6 py-3 font-medium">Criterio</th>
+              <th class="px-6 py-3 font-medium text-gold-300">Camino A</th>
+              <th class="px-6 py-3 font-medium text-sky-300">Camino B</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr class="hover:bg-white/5 transition"><td class="px-6 py-3 text-slate-400">Vehículo</td><td class="px-6 py-3">Nueva persona jurídica</td><td class="px-6 py-3">Proyecto dentro de una organización o comunidad</td></tr>
+            <tr class="hover:bg-white/5 transition"><td class="px-6 py-3 text-slate-400">Meta p
